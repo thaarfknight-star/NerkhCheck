@@ -35,13 +35,13 @@ val AppThemes = listOf(
     AppTheme(
         id = "nerkhcheck",
         nameFa = "نرخ‌چک",
-        accent = Color(0xFF00E5A0),
-        accent2 = Color(0xFF5B8DEF),
-        heroTop = Color(0xFF0B1F4D),
-        heroBottom = Color(0xFF050B1A),
-        background = Color(0xFF050B18),
-        surface = Color(0xFF0A1428),
-        surfaceVariant = Color(0xFF12203C)
+        accent = Color(0xFFE8B048),
+        accent2 = Color(0xFFF8D868),
+        heroTop = Color(0xFF1A2C66),
+        heroBottom = Color(0xFF071237),
+        background = Color(0xFF071237),
+        surface = Color(0xFF0D1B4A),
+        surfaceVariant = Color(0xFF16265E)
     ),
     AppTheme(
         id = "aurora",
