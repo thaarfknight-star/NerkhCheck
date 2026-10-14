@@ -107,3 +107,15 @@ app/src/main/java/com/chandeh/app/
   کوین‌گکو (خارجی) برای رمزارزها؛ بیت‌کوین و تترِ زنده‌ی TGJU هم اضافه شد
 - اولویت‌بندی منابع داخلی برای همه‌ی نمادها (روی اینترنت ملی کامل‌تر کار می‌کند)
 - مبدل ارز حالا رمزارزها را هم پوشش می‌دهد
+
+## لایسنس
+
+NerkhCheck نرم‌افزار آزاد است و تحت **Apache License 2.0** منتشر می‌شود — متن کامل در فایل `LICENSE`.
+
+Copyright (C) 2026 Taha Arefi (طه عارفی)
+
+## License
+
+NerkhCheck is free software released under the **Apache License, Version 2.0** — see the `LICENSE` file for the full text.
+
+Copyright (C) 2026 Taha Arefi
