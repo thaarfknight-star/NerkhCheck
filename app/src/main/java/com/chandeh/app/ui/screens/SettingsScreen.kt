@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.CurrencyExchange
@@ -34,6 +35,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -42,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -99,6 +102,7 @@ fun SettingsScreen(
     onCheckUpdate: () -> Unit
 ) {
     val ctx = LocalContext.current
+    var showLicense by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -213,6 +217,12 @@ fun SettingsScreen(
                     onClick = { openUrl(ctx, "https://github.com/thaarfknight-star/NerkhCheck") }
                 )
                 InfoRow(
+                    icon = Icons.Filled.Article,
+                    title = "لایسنس",
+                    value = "Apache-2.0",
+                    onClick = { showLicense = true }
+                )
+                InfoRow(
                     icon = Icons.Filled.Send,
                     title = "تلگرام",
                     value = "@tha_arf",
@@ -220,6 +230,19 @@ fun SettingsScreen(
                     onClick = { openUrl(ctx, "https://t.me/tha_arf") }
                 )
             }
+        }
+
+        if (showLicense) {
+            AlertDialog(
+                onDismissRequest = { showLicense = false },
+                title = { Text("لایسنس NerkhCheck") },
+                text = { Text(LICENSE_TEXT, fontSize = 13.sp) },
+                confirmButton = {
+                    TextButton(onClick = { showLicense = false }) {
+                        Text("بستن")
+                    }
+                }
+            )
         }
 
         Spacer(Modifier.height(8.dp))
@@ -348,3 +371,25 @@ private fun InfoRow(
         }
     }
 }
+
+/**
+ * متن صفحه‌ی «درباره» — آینه‌ی docs/about-dialog.txt در ریپو.
+ * چون فایل docs داخل APK باندل نمی‌شود، متن اینجا هم نگه داشته شده
+ * تا در باینری توزیعی هم باشد؛ هر تغییری در آن فایل باید اینجا هم اعمال شود.
+ */
+private const val LICENSE_TEXT =
+    "NerkhCheck — Copyright (C) 2026 Taha Arefi (طه عارفی)\n" +
+    "\n" +
+    "Licensed under the Apache License, Version 2.0 (the \"License\");\n" +
+    "you may not use this file except in compliance with the License.\n" +
+    "You may obtain a copy of the License at\n" +
+    "\n" +
+    "    http://www.apache.org/licenses/LICENSE-2.0\n" +
+    "\n" +
+    "Unless required by applicable law or agreed to in writing, software\n" +
+    "distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
+    "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
+    "See the License for the specific language governing permissions and\n" +
+    "limitations under the License.\n" +
+    "\n" +
+    "متن کامل لایسنس: فایل LICENSE در ریشه‌ی ریپو"
