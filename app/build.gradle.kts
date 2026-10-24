@@ -12,8 +12,8 @@ android {
         applicationId = "com.chandeh.app"
         minSdk = 23
         targetSdk = 34
-        versionCode = 19
-        versionName = "1.1.5"
+        versionCode = 20
+        versionName = "1.1.6"
     }
 
     // امضای ثابت برای بیلدهای CI: اگر امضا مشخص نباشد، هر رانر گیت‌هاب

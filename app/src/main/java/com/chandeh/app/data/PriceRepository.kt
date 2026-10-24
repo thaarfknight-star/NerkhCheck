@@ -19,7 +19,9 @@ import kotlin.math.abs
  *  ۲. نوبیتکس (بدون کلید) — سرور ایران، ارز دیجیتال (بیت‌کوین/اتریوم/تتر)
  *  ۳. tala.ir (بدون کلید) — سرور ایران، طلا و بخشی از سکه‌ها
  *  ۴. صفحه‌ی اصلی TGJU — هاست خارجی، همه‌ی نمادها + بیت‌کوین و تتر
- *  ۵. وب‌سرویس اسنیپت TGJU — هاست خارجی، ارز و طلا و سکه
+ *     (مس هم از همین‌جاست، با تبدیل دلار به تومان)
+ *  ۵. وب‌سرویس اسنیپت TGJU — هاست خارجی، ارز و طلا و سکه و نقره
+ *     (مس ندارد: قیمت اعشاری دلاری‌اش در این وب‌سرویس قابل خواندن نیست)
  *  ۶. کوین‌گکو (بدون کلید) — هاست خارجی، ارز دیجیتال؛ فقط برای کریپتوهای
  *     جامانده و با تبدیل دلار به تومان
  *
@@ -82,8 +84,13 @@ class PriceRepository(
             jobs += async {
                 "اسنیپت TGJU" to runCatching {
                     // اسنیپت فقط نمادهای غیرکریپتو را می‌شناسد و نگاشتش
-                    // موقعیتی است؛ پس کریپتوها از درخواست حذف می‌شوند
-                    val defs = SYMBOLS.filter { it.category != Category.CRYPTO }
+                    // موقعیتی است؛ پس کریپتوها از درخواست حذف می‌شوند.
+                    // مس هم حذف می‌شود: قیمت اعشاریِ دلاری‌اش با regex
+                    // عدد صحیحِ اسنیپت خوانده نمی‌شود (سطرش جا می‌افتد)؛
+                    // مس فقط از صفحه‌ی اصلی و کش می‌آید.
+                    val defs = SYMBOLS.filter {
+                        it.category != Category.CRYPTO && it.code != "basemetal-copper"
+                    }
                     val itemsParam = defs.joinToString(",") { it.code }
                     parseSnippet(HttpClient.get(TgjuService.SNIPPET_URL + itemsParam), defs)
                         .associateBy { it.code }
@@ -183,7 +190,13 @@ class PriceRepository(
      * مبالغ به ریال‌اند -> تقسیم بر ۱۰ برای تومان. جهت تغییر از کلاس high/low.
      */
     fun parseHomepage(html: String): List<PriceItem> {
-        val fiatDefs = SYMBOLS.filter { it.category != Category.CRYPTO }
+        // مس جداگانه handled می‌شود (دلار اعشاری) و از مسیر فیات
+        // (ریال صحیح) کنار گذاشته شده: آن مسیر برای قیمت اعشاری
+        // دلاری هیچ مقداری نمی‌دهد و رفتارش به چیدمان سطر وابسته
+        // است؛ handler اختصاصی پایین قطعی است.
+        val fiatDefs = SYMBOLS.filter {
+            it.category != Category.CRYPTO && it.code != "basemetal-copper"
+        }
         val items = fiatDefs.mapNotNull { def ->
             val row = Regex(
                 """<tr[^>]*data-market-nameslug="${def.code}".*?</tr>""",
@@ -222,6 +235,50 @@ class PriceRepository(
         // کریپتوهای زنده‌ی صفحه‌ی اصلی (سطرهای فشرده با data-price)؛
         // بیت‌کوین به دلار است و با نرخ دلار به تومان تبدیل می‌شود، تتر به ریال
         val dollarToman = items.firstOrNull { it.code == "price_dollar_rl" }?.priceToman ?: 0L
+
+        // مس — سطرش به دلار است (هر پوند، مثل 6.476) و قیمتش اعشاری
+        // است؛ پس نه در مسیر فیات می‌گنجد نه در اسنیپت. جداگانه خوانده
+        // و با نرخ دلار همان صفحه به تومان تبدیل می‌شود؛ واحد وزنی
+        // همان پوندِ منبع می‌ماند، فقط ارز عوض می‌شود. هر دو شکل سطر
+        // پشتیبانی می‌شود: فشرده (data-price) و کامل (td اعشاری).
+        val copperItems = listOfNotNull(
+            SYMBOLS.firstOrNull { it.code == "basemetal-copper" }
+        ).mapNotNull { def ->
+            if (dollarToman <= 0) return@mapNotNull null
+            val row = Regex(
+                """<tr[^>]*data-market-nameslug="basemetal-copper".*?</tr>""",
+                setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
+            ).find(html)?.value ?: return@mapNotNull null
+            val priceUsd = Regex("""data-price="([\d.,]+)"""").find(row)
+                ?.groupValues?.get(1)?.replace(",", "")?.toDoubleOrNull()
+                ?: Regex("""<td[^>]*>([\d,]+\.[\d]+)</td>""").find(row)
+                    ?.groupValues?.get(1)?.replace(",", "")?.toDoubleOrNull()
+                ?: return@mapNotNull null
+            if (priceUsd <= 0) return@mapNotNull null
+
+            val changeMatch = Regex(
+                """<span class="(high|low)">\(([-\d.]+)%\)\s*(-?[\d,]+(?:\.[\d]+)?)</span>"""
+            ).find(row)
+            val dir = changeMatch?.groupValues?.get(1)
+            val pct = changeMatch?.groupValues?.get(2)?.toDoubleOrNull() ?: 0.0
+            val changeUsd = changeMatch?.groupValues?.get(3)
+                ?.replace(",", "")?.toDoubleOrNull() ?: 0.0
+            val sign = if (dir == "low") -1 else 1
+
+            val time = Regex("""<td[^>]*>([\d۰-۹]{1,2}:[\d۰-۹]{2}(?::[\d۰-۹]{2})?)</td>""")
+                .find(row)?.groupValues?.get(1).orEmpty()
+
+            PriceItem(
+                code = def.code,
+                titleFa = def.titleFa,
+                category = def.category,
+                priceToman = (priceUsd * dollarToman).toLong(),
+                changeToman = (sign * changeUsd * dollarToman).toLong(),
+                changePercent = sign * abs(pct),
+                updatedAt = time
+            )
+        }
+
         val cryptoItems = CRYPTO_TGJU.mapNotNull { (tgjuSlug, appCode, inUsd) ->
             val def = SYMBOLS.firstOrNull { it.code == appCode } ?: return@mapNotNull null
             val row = Regex(
@@ -261,7 +318,7 @@ class PriceRepository(
                 updatedAt = time
             )
         }
-        return items + cryptoItems
+        return items + copperItems + cryptoItems
     }
 
     // ------------------------------------------------------------------

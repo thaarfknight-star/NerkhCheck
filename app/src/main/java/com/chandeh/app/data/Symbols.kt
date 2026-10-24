@@ -5,7 +5,8 @@ enum class Category(val titleFa: String) {
     CURRENCY("ارزها"),
     GOLD("طلا"),
     COIN("سکه"),
-    CRYPTO("ارز دیجیتال")
+    CRYPTO("ارز دیجیتال"),
+    METAL("فلزات")
 }
 
 /** تعریف یک نماد: کد داخلی TGJU + عنوان فارسی */
@@ -45,6 +46,11 @@ val SYMBOLS = listOf(
     SymbolDef("btc", "بیت‌کوین", Category.CRYPTO),
     SymbolDef("eth", "اتریوم", Category.CRYPTO),
     SymbolDef("usdt", "تتر", Category.CRYPTO),
+    // فلزات — آخر لیست می‌مانند تا اگر وب‌سرویس اسنیپت سطرشان را
+    // جا انداخت، نگاشت موقعیتیِ نمادهای قبلی جابه‌جا نشود
+    // (نقره ۹۹۹: گرم به ریال مثل طلای ۱۸ عیار؛ مس: دلار به ازای هر پوند)
+    SymbolDef("silver_999", "نقره ۹۹۹", Category.METAL),
+    SymbolDef("basemetal-copper", "مس", Category.METAL),
 )
 
 /** یک قلم قیمت — همه‌ی مبالغ به تومان.
