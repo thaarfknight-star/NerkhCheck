@@ -106,7 +106,10 @@ class MainActivity : ComponentActivity() {
             // ۲. آپدیت کد — نسخه‌ی جدید ریلیز؛ دانلود و نصب هم داخل خود برنامه
             LaunchedEffect(Unit) {
                 if (UpdateChecker.checkContentUpdate(prefs) > 0) refreshThemes()
-                updateInfo = UpdateChecker.checkApkUpdate(prefs)
+                when (val apkResult = UpdateChecker.checkApkUpdate(prefs)) {
+                    is UpdateChecker.ApkCheckResult.Available -> updateInfo = apkResult.info
+                    else -> {}
+                }
             }
 
             /** بررسی دستی از دکمه‌ی «بررسی آپدیت» در تنظیمات */
@@ -116,15 +119,19 @@ class MainActivity : ComponentActivity() {
                 manualStatus = null
                 scope.launch {
                     val newCount = UpdateChecker.checkContentUpdate(prefs)
-                    val apk = UpdateChecker.checkApkUpdate(prefs, force = true)
+                    val apkResult = UpdateChecker.checkApkUpdate(prefs, force = true)
                     if (newCount > 0) refreshThemes()
                     manualStatus = buildString {
                         if (newCount > 0) append("✓ $newCount مورد جدید از فایل آپدیت اعمال شد. ")
-                        if (apk != null) {
-                            append("نسخه‌ی ${apk.version} منتشر شده است.")
-                            updateInfo = apk
-                        } else {
-                            append("برنامه به‌روز است.")
+                        when (apkResult) {
+                            is UpdateChecker.ApkCheckResult.Available -> {
+                                append("نسخه‌ی ${apkResult.info.version} منتشر شده است.")
+                                updateInfo = apkResult.info
+                            }
+                            is UpdateChecker.ApkCheckResult.CheckFailed ->
+                                append("بررسی آپدیت انجام نشد؛ اتصال اینترنت را بررسی کنید و دوباره امتحان کنید.")
+                            is UpdateChecker.ApkCheckResult.UpToDate ->
+                                append("برنامه به‌روز است.")
                         }
                     }.toFaDigits()
                     checkingUpdates = false

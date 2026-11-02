@@ -69,3 +69,26 @@ jobs:
 
           برای به‌روزرسانی، کافی است در برنامه «بررسی آپدیت» را بزنید تا دانلود و نصب داخل خود برنامه انجام شود."
           fi
+
+      - name: Update update-feed.json on main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Commit update-feed.json
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VER="${TAG#v}"
+          cat > update-feed.json <<EOF
+          {
+            "app": "NerkhCheck",
+            "version": "$VER",
+            "apkUrl": "https://github.com/thaarfknight-star/NerkhCheck/releases/download/$TAG/NerkhCheck.apk",
+            "pageUrl": "https://github.com/thaarfknight-star/NerkhCheck/releases/tag/$TAG"
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add update-feed.json
+          git diff --cached --quiet && echo "feed unchanged" && exit 0
+          git commit -m "[skip ci] فید آپدیت را به نسخه‌ی $VER رساندم"
+          git push origin main
